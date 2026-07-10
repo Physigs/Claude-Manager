@@ -657,7 +657,7 @@ describe('launchProject', () => {
 
     expect(spawnFn).toHaveBeenCalledWith(
       'cmd.exe',
-      ['/k', 'cd /d "C:/workspaces/Momentum" && claude'],
+      ['/c', 'start', '""', 'cmd.exe', '/k', 'cd /d "C:/workspaces/Momentum" && claude'],
       expect.objectContaining({ detached: true })
     )
     expect(result).toEqual({ usedFallback: true })
@@ -691,10 +691,11 @@ export function launchProject(
     })
 
     child.once('error', () => {
-      const fallback = spawnFn('cmd.exe', ['/k', `cd /d "${projectPath}" && claude`], {
-        detached: true,
-        stdio: 'ignore'
-      })
+      const fallback = spawnFn(
+        'cmd.exe',
+        ['/c', 'start', '""', 'cmd.exe', '/k', `cd /d "${projectPath}" && claude`],
+        { detached: true, stdio: 'ignore' }
+      )
       fallback.unref()
       resolve({ usedFallback: true })
     })
