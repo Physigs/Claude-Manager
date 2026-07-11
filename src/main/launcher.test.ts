@@ -46,4 +46,22 @@ describe('launchProject', () => {
     )
     expect(result).toEqual({ usedFallback: true })
   })
+
+  it('does not crash when the cmd.exe fallback itself fails to spawn', async () => {
+    const wtChild = makeFakeChild()
+    const fallbackChild = makeFakeChild()
+    const spawnFn = vi.fn().mockImplementation((command: string) => {
+      if (command === 'wt.exe') {
+        queueMicrotask(() => wtChild.emit('error', new Error('ENOENT')))
+        return wtChild
+      }
+      return fallbackChild
+    })
+
+    const result = await launchProject('C:/does/not/exist', spawnFn as any)
+    expect(result).toEqual({ usedFallback: true })
+
+    // Emitting 'error' on the fallback child after resolution must not throw/crash.
+    expect(() => fallbackChild.emit('error', new Error('ENOENT'))).not.toThrow()
+  })
 })

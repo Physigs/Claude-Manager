@@ -74,6 +74,7 @@ function registerIpcHandlers(mainWindow: BrowserWindow): void {
       if (!config.pinned.includes(folder)) {
         config.pinned = [...config.pinned, folder]
       }
+      config.hidden = config.hidden.filter((p) => p !== folder)
     })
   })
 }

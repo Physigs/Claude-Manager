@@ -20,6 +20,9 @@ export function launchProject(
         stdio: 'ignore',
         cwd: projectPath
       })
+      fallback.once('error', () => {
+        // swallow: fallback spawn failed (e.g. nonexistent cwd); nothing further to try
+      })
       fallback.unref()
       resolve({ usedFallback: true })
     })
