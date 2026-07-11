@@ -15,9 +15,10 @@ export function launchProject(
     })
 
     child.once('error', () => {
-      const fallback = spawnFn('cmd.exe', ['/k', `cd /d "${projectPath}" && claude`], {
+      const fallback = spawnFn('cmd.exe', ['/c', 'start', '""', 'cmd.exe', '/k', 'claude'], {
         detached: true,
-        stdio: 'ignore'
+        stdio: 'ignore',
+        cwd: projectPath
       })
       fallback.unref()
       resolve({ usedFallback: true })
