@@ -20,3 +20,15 @@ Config (pinned/hidden/manual projects) is stored at
 
 If Windows Terminal (`wt.exe`) isn't installed, launching falls back to
 opening a `cmd.exe` window running `claude` in the project's directory.
+
+## Getting updates
+
+If you don't have Node.js installed, you don't need it. Just:
+
+```bash
+git pull
+```
+
+Then run `release\claude-launcher.exe` directly — it's a self-contained
+portable app, rebuilt and committed automatically whenever a new version
+is released. No install step, no npm required.

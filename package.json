@@ -8,8 +8,26 @@
     "dev": "electron-vite dev",
     "build": "electron-vite build",
     "start": "electron-vite build && electron .",
+    "package": "electron-vite build && electron-builder --win portable",
     "test": "vitest run",
     "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.web.json"
+  },
+  "build": {
+    "appId": "dev.brichley.claudelauncher",
+    "productName": "Claude Launcher",
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "portable"
+    },
+    "portable": {
+      "artifactName": "claude-launcher.exe"
+    }
   },
   "dependencies": {
     "react": "^18.3.1",
@@ -21,6 +39,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "electron": "^31.0.0",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^2.3.0",
     "typescript": "^5.5.4",
     "vite": "^5.3.5",
