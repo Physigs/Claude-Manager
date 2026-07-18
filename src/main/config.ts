@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir } from 'fs/promises'
 import { dirname } from 'path'
-import { TERMINAL_LABELS, type TerminalId } from './launcher'
+import { TERMINAL_LABELS, type TerminalId } from './terminals'
 
 export interface LauncherConfig {
   pinned: string[]

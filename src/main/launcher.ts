@@ -1,14 +1,7 @@
 import { spawn, SpawnOptions } from 'child_process'
+import type { TerminalId } from './terminals'
 
-export type TerminalId = 'wt' | 'powershell' | 'cmd' | 'gitbash' | 'wsl'
-
-export const TERMINAL_LABELS: Record<TerminalId, string> = {
-  wt: 'Windows Terminal',
-  powershell: 'PowerShell',
-  cmd: 'Command Prompt',
-  gitbash: 'Git Bash',
-  wsl: 'WSL'
-}
+export type { TerminalId } from './terminals'
 
 export interface LaunchResult {
   usedFallback: boolean

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Project } from '../../main/projectList'
+import { TERMINAL_LABELS, type TerminalId } from '../../main/terminals'
 import FlagsPopover from './FlagsPopover'
+
+const TERMINAL_OPTIONS = Object.entries(TERMINAL_LABELS) as [TerminalId, string][]
 
 function App(): JSX.Element {
   const [projects, setProjects] = useState<Project[]>([])
@@ -8,10 +11,12 @@ function App(): JSX.Element {
   const [notice, setNotice] = useState<string | null>(null)
   const [flagHistory, setFlagHistory] = useState<string[]>([])
   const [openFlagsFor, setOpenFlagsFor] = useState<string | null>(null)
+  const [terminal, setTerminal] = useState<TerminalId>('wt')
 
   useEffect(() => {
     window.api.listProjects().then(setProjects)
     window.api.getFlagHistory().then(setFlagHistory)
+    window.api.getTerminal().then(setTerminal)
   }, [])
 
   const filtered = useMemo(() => {
@@ -24,7 +29,11 @@ function App(): JSX.Element {
 
   async function handleLaunch(path: string): Promise<void> {
     const result = await window.api.launchProject(path)
-    setNotice(result.usedFallback ? 'Windows Terminal not found — opened cmd.exe instead.' : null)
+    setNotice(
+      result.usedFallback
+        ? `${TERMINAL_LABELS[terminal]} not found — opened Command Prompt instead.`
+        : null
+    )
   }
 
   async function handleTogglePin(path: string): Promise<void> {
@@ -44,6 +53,11 @@ function App(): JSX.Element {
     setFlagHistory(await window.api.getFlagHistory())
   }
 
+  async function handleSetTerminal(next: TerminalId): Promise<void> {
+    setTerminal(next)
+    await window.api.setTerminal(next)
+  }
+
   return (
     <div className="app">
       <div className="toolbar">
@@ -53,6 +67,19 @@ function App(): JSX.Element {
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
+        <label className="terminal-picker">
+          Open in:
+          <select
+            value={terminal}
+            onChange={(e) => handleSetTerminal(e.target.value as TerminalId)}
+          >
+            {TERMINAL_OPTIONS.map(([id, label]) => (
+              <option key={id} value={id}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
         <button onClick={handleAddFolder}>Add folder</button>
       </div>
       {notice && <div className="notice">{notice}</div>}

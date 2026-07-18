@@ -170,3 +170,20 @@ body {
   cursor: pointer;
   font-size: 12px;
 }
+
+.terminal-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #ccc;
+  white-space: nowrap;
+}
+
+.terminal-picker select {
+  padding: 6px 8px;
+  border-radius: 4px;
+  border: 1px solid #444;
+  background: #2a2a2a;
+  color: #eee;
+}
