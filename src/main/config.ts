@@ -5,9 +5,13 @@ export interface LauncherConfig {
   pinned: string[]
   hidden: string[]
   manual: string[]
+  projectFlags: Record<string, string>
+  flagHistory: string[]
 }
 
-const DEFAULT_CONFIG: LauncherConfig = { pinned: [], hidden: [], manual: [] }
+function isPlainObject(value: unknown): value is Record<string, string> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
 
 export async function loadConfig(configPath: string): Promise<LauncherConfig> {
   try {
@@ -16,10 +20,12 @@ export async function loadConfig(configPath: string): Promise<LauncherConfig> {
     return {
       pinned: Array.isArray(data.pinned) ? data.pinned : [],
       hidden: Array.isArray(data.hidden) ? data.hidden : [],
-      manual: Array.isArray(data.manual) ? data.manual : []
+      manual: Array.isArray(data.manual) ? data.manual : [],
+      projectFlags: isPlainObject(data.projectFlags) ? data.projectFlags : {},
+      flagHistory: Array.isArray(data.flagHistory) ? data.flagHistory : []
     }
   } catch {
-    return { ...DEFAULT_CONFIG }
+    return { pinned: [], hidden: [], manual: [], projectFlags: {}, flagHistory: [] }
   }
 }
 
