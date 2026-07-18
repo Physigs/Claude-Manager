@@ -44,4 +44,19 @@ describe('mergeProjects', () => {
     const result = mergeProjects(['C:/a'], { pinned: [], hidden: [], manual: [] })
     expect(result[0].missing).toBe(false)
   })
+
+  it('includes saved flags for a project', () => {
+    const result = mergeProjects(['C:/a'], {
+      pinned: [],
+      hidden: [],
+      manual: [],
+      projectFlags: { 'C:/a': '--verbose' }
+    })
+    expect(result[0].flags).toBe('--verbose')
+  })
+
+  it('defaults flags to an empty string when none are saved', () => {
+    const result = mergeProjects(['C:/a'], { pinned: [], hidden: [], manual: [] })
+    expect(result[0].flags).toBe('')
+  })
 })

@@ -3,18 +3,21 @@ export interface Project {
   name: string
   pinned: boolean
   missing: boolean
+  flags: string
 }
 
 export interface ProjectListConfig {
   pinned: string[]
   hidden: string[]
   manual: string[]
+  projectFlags?: Record<string, string>
 }
 
 export function mergeProjects(claudeJsonPaths: string[], config: ProjectListConfig): Project[] {
   const allPaths = new Set<string>([...claudeJsonPaths, ...config.manual])
   const hiddenSet = new Set(config.hidden)
   const pinnedSet = new Set(config.pinned)
+  const projectFlags = config.projectFlags ?? {}
 
   const projects: Project[] = []
   for (const path of allPaths) {
@@ -23,7 +26,8 @@ export function mergeProjects(claudeJsonPaths: string[], config: ProjectListConf
       path,
       name: pathToName(path),
       pinned: pinnedSet.has(path),
-      missing: false
+      missing: false,
+      flags: projectFlags[path] ?? ''
     })
   }
 
