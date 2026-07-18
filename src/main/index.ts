@@ -7,6 +7,7 @@ import { loadConfig, saveConfig, LauncherConfig } from './config'
 import { readClaudeJsonProjects } from './claudeProjects'
 import { mergeProjects, Project } from './projectList'
 import { launchProject } from './launcher'
+import { recordFlagUsage } from './flags'
 
 const CLAUDE_JSON_PATH = join(homedir(), '.claude.json')
 
@@ -37,8 +38,9 @@ async function updateConfig(mutate: (config: LauncherConfig) => void): Promise<P
 function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('projects:list', () => buildProjectList())
 
-  ipcMain.handle('projects:launch', (_event, projectPath: string) => {
-    return launchProject(projectPath)
+  ipcMain.handle('projects:launch', async (_event, projectPath: string) => {
+    const config = await loadConfig(getConfigPath())
+    return launchProject(projectPath, config.projectFlags[projectPath] ?? '')
   })
 
   ipcMain.handle('projects:togglePin', (_event, projectPath: string) => {
@@ -76,6 +78,15 @@ function registerIpcHandlers(mainWindow: BrowserWindow): void {
       }
       config.hidden = config.hidden.filter((p) => p !== folder)
     })
+  })
+
+  ipcMain.handle('projects:saveFlags', (_event, projectPath: string, flags: string) => {
+    return updateConfig((config) => recordFlagUsage(config, projectPath, flags))
+  })
+
+  ipcMain.handle('projects:getFlagHistory', async () => {
+    const config = await loadConfig(getConfigPath())
+    return config.flagHistory
   })
 }
 

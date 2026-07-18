@@ -8,7 +8,10 @@ const api = {
     ipcRenderer.invoke('projects:launch', path),
   togglePin: (path: string): Promise<Project[]> => ipcRenderer.invoke('projects:togglePin', path),
   hideProject: (path: string): Promise<Project[]> => ipcRenderer.invoke('projects:hide', path),
-  addFolder: (): Promise<Project[]> => ipcRenderer.invoke('projects:addFolder')
+  addFolder: (): Promise<Project[]> => ipcRenderer.invoke('projects:addFolder'),
+  saveFlags: (path: string, flags: string): Promise<Project[]> =>
+    ipcRenderer.invoke('projects:saveFlags', path, flags),
+  getFlagHistory: (): Promise<string[]> => ipcRenderer.invoke('projects:getFlagHistory')
 }
 
 contextBridge.exposeInMainWorld('api', api)
