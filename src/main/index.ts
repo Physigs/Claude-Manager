@@ -6,7 +6,7 @@ import { homedir } from 'os'
 import { loadConfig, saveConfig, LauncherConfig } from './config'
 import { readClaudeJsonProjects } from './claudeProjects'
 import { mergeProjects, Project } from './projectList'
-import { launchProject } from './launcher'
+import { launchProject, TerminalId } from './launcher'
 import { recordFlagUsage } from './flags'
 
 const CLAUDE_JSON_PATH = join(homedir(), '.claude.json')
@@ -40,7 +40,7 @@ function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
   ipcMain.handle('projects:launch', async (_event, projectPath: string) => {
     const config = await loadConfig(getConfigPath())
-    return launchProject(projectPath, config.projectFlags[projectPath] ?? '')
+    return launchProject(projectPath, config.projectFlags[projectPath] ?? '', config.terminal)
   })
 
   ipcMain.handle('projects:togglePin', (_event, projectPath: string) => {
@@ -87,6 +87,18 @@ function registerIpcHandlers(mainWindow: BrowserWindow): void {
   ipcMain.handle('projects:getFlagHistory', async () => {
     const config = await loadConfig(getConfigPath())
     return config.flagHistory
+  })
+
+  ipcMain.handle('projects:setTerminal', async (_event, terminal: TerminalId) => {
+    const configPath = getConfigPath()
+    const config = await loadConfig(configPath)
+    config.terminal = terminal
+    await saveConfig(configPath, config)
+  })
+
+  ipcMain.handle('projects:getTerminal', async () => {
+    const config = await loadConfig(getConfigPath())
+    return config.terminal
   })
 }
 
