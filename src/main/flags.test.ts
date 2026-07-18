@@ -9,7 +9,7 @@ import {
 import type { LauncherConfig } from './config'
 
 function emptyConfig(): LauncherConfig {
-  return { pinned: [], hidden: [], manual: [], projectFlags: {}, flagHistory: [] }
+  return { pinned: [], hidden: [], manual: [], projectFlags: {}, flagHistory: [], terminal: 'wt' }
 }
 
 describe('recordFlagUsage', () => {

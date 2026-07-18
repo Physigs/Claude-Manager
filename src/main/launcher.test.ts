@@ -8,15 +8,19 @@ function makeFakeChild(): EventEmitter & { unref: () => void } {
   return emitter
 }
 
-describe('launchProject', () => {
-  it('spawns wt.exe with the project directory and claude', async () => {
-    const spawnFn = vi.fn().mockImplementation(() => {
-      const child = makeFakeChild()
-      queueMicrotask(() => child.emit('spawn'))
-      return child
-    })
+function spawningFn(): ReturnType<typeof vi.fn> {
+  return vi.fn().mockImplementation(() => {
+    const child = makeFakeChild()
+    queueMicrotask(() => child.emit('spawn'))
+    return child
+  })
+}
 
-    const result = await launchProject('C:/workspaces/Momentum', '', spawnFn as any)
+describe('launchProject', () => {
+  it('spawns wt.exe with the project directory and claude by default', async () => {
+    const spawnFn = spawningFn()
+
+    const result = await launchProject('C:/workspaces/Momentum', '', 'wt', spawnFn as any)
 
     expect(spawnFn).toHaveBeenCalledWith(
       'wt.exe',
@@ -27,15 +31,12 @@ describe('launchProject', () => {
   })
 
   it('appends flags as extra args to the wt.exe claude invocation', async () => {
-    const spawnFn = vi.fn().mockImplementation(() => {
-      const child = makeFakeChild()
-      queueMicrotask(() => child.emit('spawn'))
-      return child
-    })
+    const spawnFn = spawningFn()
 
     await launchProject(
       'C:/workspaces/Momentum',
       '--dangerously-skip-permissions --continue',
+      'wt',
       spawnFn as any
     )
 
@@ -46,7 +47,67 @@ describe('launchProject', () => {
     )
   })
 
-  it('falls back to cmd.exe when wt.exe fails to spawn', async () => {
+  it('spawns Command Prompt via cmd.exe /c start when cmd is chosen', async () => {
+    const spawnFn = spawningFn()
+
+    await launchProject('C:/workspaces/Momentum', '--verbose', 'cmd', spawnFn as any)
+
+    expect(spawnFn).toHaveBeenCalledWith(
+      'cmd.exe',
+      ['/c', 'start', '""', 'cmd.exe', '/k', 'claude', '--verbose'],
+      expect.objectContaining({ detached: true, cwd: 'C:/workspaces/Momentum' })
+    )
+  })
+
+  it('spawns PowerShell via cmd.exe /c start when powershell is chosen', async () => {
+    const spawnFn = spawningFn()
+
+    await launchProject('C:/workspaces/Momentum', '--verbose', 'powershell', spawnFn as any)
+
+    expect(spawnFn).toHaveBeenCalledWith(
+      'cmd.exe',
+      ['/c', 'start', '""', 'powershell.exe', '-NoExit', '-Command', 'claude', '--verbose'],
+      expect.objectContaining({ detached: true, cwd: 'C:/workspaces/Momentum' })
+    )
+  })
+
+  it('spawns Git Bash via cmd.exe /c start when gitbash is chosen', async () => {
+    const spawnFn = spawningFn()
+
+    await launchProject('C:/workspaces/Momentum', '--verbose', 'gitbash', spawnFn as any)
+
+    expect(spawnFn).toHaveBeenCalledWith(
+      'cmd.exe',
+      ['/c', 'start', '""', 'bash.exe', '-c', 'claude --verbose; exec bash'],
+      expect.objectContaining({ detached: true, cwd: 'C:/workspaces/Momentum' })
+    )
+  })
+
+  it('spawns WSL via cmd.exe /c start when wsl is chosen', async () => {
+    const spawnFn = spawningFn()
+
+    await launchProject('C:/workspaces/Momentum', '--verbose', 'wsl', spawnFn as any)
+
+    expect(spawnFn).toHaveBeenCalledWith(
+      'cmd.exe',
+      ['/c', 'start', '""', 'wsl.exe', 'bash', '-c', 'claude --verbose; exec bash'],
+      expect.objectContaining({ detached: true, cwd: 'C:/workspaces/Momentum' })
+    )
+  })
+
+  it('builds a clean bash command with no trailing space when there are no flags', async () => {
+    const spawnFn = spawningFn()
+
+    await launchProject('C:/workspaces/Momentum', '', 'gitbash', spawnFn as any)
+
+    expect(spawnFn).toHaveBeenCalledWith(
+      'cmd.exe',
+      ['/c', 'start', '""', 'bash.exe', '-c', 'claude; exec bash'],
+      expect.objectContaining({ detached: true, cwd: 'C:/workspaces/Momentum' })
+    )
+  })
+
+  it('falls back to Command Prompt when the chosen terminal fails to spawn', async () => {
     const spawnFn = vi.fn().mockImplementation((command: string) => {
       const child = makeFakeChild()
       if (command === 'wt.exe') {
@@ -57,7 +118,7 @@ describe('launchProject', () => {
       return child
     })
 
-    const result = await launchProject('C:/workspaces/Momentum', '', spawnFn as any)
+    const result = await launchProject('C:/workspaces/Momentum', '', 'wt', spawnFn as any)
 
     expect(spawnFn).toHaveBeenCalledWith(
       'cmd.exe',
@@ -67,10 +128,10 @@ describe('launchProject', () => {
     expect(result).toEqual({ usedFallback: true })
   })
 
-  it('appends flags to the cmd.exe fallback invocation too', async () => {
-    const spawnFn = vi.fn().mockImplementation((command: string) => {
+  it('falls back to Command Prompt when PowerShell fails to spawn', async () => {
+    const spawnFn = vi.fn().mockImplementation((command: string, args: string[]) => {
       const child = makeFakeChild()
-      if (command === 'wt.exe') {
+      if (command === 'cmd.exe' && args.includes('powershell.exe')) {
         queueMicrotask(() => child.emit('error', new Error('ENOENT')))
       } else {
         queueMicrotask(() => child.emit('spawn'))
@@ -78,16 +139,17 @@ describe('launchProject', () => {
       return child
     })
 
-    await launchProject('C:/workspaces/Momentum', '--verbose', spawnFn as any)
+    const result = await launchProject('C:/workspaces/Momentum', '', 'powershell', spawnFn as any)
 
     expect(spawnFn).toHaveBeenCalledWith(
       'cmd.exe',
-      ['/c', 'start', '""', 'cmd.exe', '/k', 'claude', '--verbose'],
+      ['/c', 'start', '""', 'cmd.exe', '/k', 'claude'],
       expect.objectContaining({ detached: true, cwd: 'C:/workspaces/Momentum' })
     )
+    expect(result).toEqual({ usedFallback: true })
   })
 
-  it('does not crash when the cmd.exe fallback itself fails to spawn', async () => {
+  it('does not crash when the fallback itself fails to spawn', async () => {
     const wtChild = makeFakeChild()
     const fallbackChild = makeFakeChild()
     const spawnFn = vi.fn().mockImplementation((command: string) => {
@@ -98,7 +160,7 @@ describe('launchProject', () => {
       return fallbackChild
     })
 
-    const result = await launchProject('C:/does/not/exist', '', spawnFn as any)
+    const result = await launchProject('C:/does/not/exist', '', 'wt', spawnFn as any)
     expect(result).toEqual({ usedFallback: true })
 
     expect(() => fallbackChild.emit('error', new Error('ENOENT'))).not.toThrow()

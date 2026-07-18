@@ -14,7 +14,14 @@ describe('loadConfig', () => {
   it('returns defaults when the file does not exist', async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'claude-launcher-'))
     const config = await loadConfig(join(tempDir, 'config.json'))
-    expect(config).toEqual({ pinned: [], hidden: [], manual: [], projectFlags: {}, flagHistory: [] })
+    expect(config).toEqual({
+      pinned: [],
+      hidden: [],
+      manual: [],
+      projectFlags: {},
+      flagHistory: [],
+      terminal: 'wt'
+    })
   })
 
   it('returns defaults when the file has invalid JSON', async () => {
@@ -22,7 +29,14 @@ describe('loadConfig', () => {
     const configPath = join(tempDir, 'config.json')
     await writeFile(configPath, 'not json', 'utf-8')
     const config = await loadConfig(configPath)
-    expect(config).toEqual({ pinned: [], hidden: [], manual: [], projectFlags: {}, flagHistory: [] })
+    expect(config).toEqual({
+      pinned: [],
+      hidden: [],
+      manual: [],
+      projectFlags: {},
+      flagHistory: [],
+      terminal: 'wt'
+    })
   })
 
   it('defaults projectFlags and flagHistory when missing from an older config file', async () => {
@@ -32,6 +46,26 @@ describe('loadConfig', () => {
     const config = await loadConfig(configPath)
     expect(config.projectFlags).toEqual({})
     expect(config.flagHistory).toEqual([])
+  })
+
+  it('defaults terminal to wt when missing from an older config file', async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'claude-launcher-'))
+    const configPath = join(tempDir, 'config.json')
+    await writeFile(configPath, JSON.stringify({ pinned: [], hidden: [], manual: [] }), 'utf-8')
+    const config = await loadConfig(configPath)
+    expect(config.terminal).toBe('wt')
+  })
+
+  it('defaults terminal to wt when the stored value is not a known terminal id', async () => {
+    tempDir = await mkdtemp(join(tmpdir(), 'claude-launcher-'))
+    const configPath = join(tempDir, 'config.json')
+    await writeFile(
+      configPath,
+      JSON.stringify({ pinned: [], hidden: [], manual: [], terminal: 'not-a-real-terminal' }),
+      'utf-8'
+    )
+    const config = await loadConfig(configPath)
+    expect(config.terminal).toBe('wt')
   })
 
   it('two separate loadConfig calls against missing files do not share state', async () => {
@@ -52,7 +86,8 @@ describe('saveConfig + loadConfig round trip', () => {
       hidden: ['C:/b'],
       manual: ['C:/c'],
       projectFlags: { 'C:/a': '--verbose' },
-      flagHistory: ['--verbose']
+      flagHistory: ['--verbose'],
+      terminal: 'powershell' as const
     }
     await saveConfig(configPath, data)
     const reloaded = await loadConfig(configPath)
