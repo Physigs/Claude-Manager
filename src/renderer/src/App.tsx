@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Project } from '../../main/projectList'
+import FlagsPopover from './FlagsPopover'
 
 function App(): JSX.Element {
   const [projects, setProjects] = useState<Project[]>([])
   const [query, setQuery] = useState('')
   const [notice, setNotice] = useState<string | null>(null)
+  const [flagHistory, setFlagHistory] = useState<string[]>([])
+  const [openFlagsFor, setOpenFlagsFor] = useState<string | null>(null)
 
   useEffect(() => {
     window.api.listProjects().then(setProjects)
+    window.api.getFlagHistory().then(setFlagHistory)
   }, [])
 
   const filtered = useMemo(() => {
@@ -35,6 +39,11 @@ function App(): JSX.Element {
     setProjects(await window.api.addFolder())
   }
 
+  async function handleSaveFlags(path: string, flags: string): Promise<void> {
+    setProjects(await window.api.saveFlags(path, flags))
+    setFlagHistory(await window.api.getFlagHistory())
+  }
+
   return (
     <div className="app">
       <div className="toolbar">
@@ -50,19 +59,36 @@ function App(): JSX.Element {
       <ul className="project-list">
         {filtered.map((project) => (
           <li key={project.path} className="project-card">
-            <div className="project-info" onClick={() => handleLaunch(project.path)}>
-              <div className="project-name">
-                {project.name}
-                {project.missing && <span className="badge">missing</span>}
+            <div className="project-card-row">
+              <div className="project-info" onClick={() => handleLaunch(project.path)}>
+                <div className="project-name">
+                  {project.name}
+                  {project.missing && <span className="badge">missing</span>}
+                </div>
+                <div className="project-path">{project.path}</div>
               </div>
-              <div className="project-path">{project.path}</div>
+              <div className="project-actions">
+                <button onClick={() => handleTogglePin(project.path)}>
+                  {project.pinned ? 'Unpin' : 'Pin'}
+                </button>
+                <button
+                  onClick={() =>
+                    setOpenFlagsFor(openFlagsFor === project.path ? null : project.path)
+                  }
+                >
+                  Flags
+                </button>
+                <button onClick={() => handleHide(project.path)}>Hide</button>
+              </div>
             </div>
-            <div className="project-actions">
-              <button onClick={() => handleTogglePin(project.path)}>
-                {project.pinned ? 'Unpin' : 'Pin'}
-              </button>
-              <button onClick={() => handleHide(project.path)}>Hide</button>
-            </div>
+            {openFlagsFor === project.path && (
+              <FlagsPopover
+                project={project}
+                flagHistory={flagHistory}
+                onSave={handleSaveFlags}
+                onClose={() => setOpenFlagsFor(null)}
+              />
+            )}
           </li>
         ))}
       </ul>
