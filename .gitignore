@@ -3,5 +3,4 @@ out/
 dist/
 *.log
 .superpowers/
-release/*
-!release/claude-launcher.exe
+release/

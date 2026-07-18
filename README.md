@@ -23,12 +23,9 @@ opening a `cmd.exe` window running `claude` in the project's directory.
 
 ## Getting updates
 
-If you don't have Node.js installed, you don't need it. Just:
-
-```bash
-git pull
-```
-
-Then run `release\claude-launcher.exe` directly — it's a self-contained
-portable app, rebuilt and committed automatically whenever a new version
-is released. No install step, no npm required.
+If you don't have Node.js installed, you don't need it. Grab the latest
+`claude-launcher.exe` from the
+[Releases page](https://github.com/Physigs/Claude-Manager/releases/latest)
+and run it directly — it's a self-contained portable app. A new release is
+published automatically whenever the app version is bumped. No install
+step, no npm required.
